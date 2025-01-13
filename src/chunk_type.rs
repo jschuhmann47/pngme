@@ -42,7 +42,11 @@ impl FromStr for ChunkType {
 
 impl std::fmt::Display for ChunkType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", std::str::from_utf8(self.bytes().as_slice()).expect("non utf8"))
+        write!(
+            f,
+            "{}",
+            std::str::from_utf8(self.bytes().as_slice()).expect("non utf8")
+        )
     }
 }
 
