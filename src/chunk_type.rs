@@ -9,20 +9,23 @@ impl ChunkType {
     fn bytes(&self) -> [u8; 4] {
         self.bytes
     }
+
+    fn is_critical(&self) -> bool {
+        // moves the bit 1 four positions to the left so that it is in bit five, and we do a binary AND, keeping only that bit in 1 or 0
+        let first_char = self.bytes()[0];
+        (first_char & (1 << 5)) == 0
+    }
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
     type Error = String;
 
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
-        if value.iter().any(|b| !is_character(*b)) {
+        if value.iter().any(|b| !b.is_ascii()) {
             return Err(String::from("invalid chunk type"));
         }
         Ok(ChunkType { bytes: value })
     }
-}
-fn is_character(byte: u8) -> bool {
-    byte.is_ascii()
 }
 
 impl FromStr for ChunkType {
@@ -76,5 +79,17 @@ mod tests {
     pub fn test_chunk_type_display() {
         let actual = ChunkType::from_str("RuSt").unwrap();
         assert_eq!("RuSt", actual.to_string());
+    }
+
+    #[test]
+    pub fn test_chunk_type_is_critical() {
+        let chunk = ChunkType::from_str("RuSt").unwrap();
+        assert!(chunk.is_critical());
+    }
+
+    #[test]
+    pub fn test_chunk_type_is_not_critical() {
+        let chunk = ChunkType::from_str("ruSt").unwrap();
+        assert!(!chunk.is_critical());
     }
 }
