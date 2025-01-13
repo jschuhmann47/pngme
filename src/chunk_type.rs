@@ -22,7 +22,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
     }
 }
 fn is_character(byte: u8) -> bool {
-    (byte >= 97 && byte <= 122) || (byte >= 65 && byte <= 90)
+    byte.is_ascii()
 }
 
 impl FromStr for ChunkType {
@@ -37,6 +37,12 @@ impl FromStr for ChunkType {
             bytes[i] = c
         }
         Ok(ChunkType { bytes })
+    }
+}
+
+impl std::fmt::Display for ChunkType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", std::str::from_utf8(self.bytes().as_slice()).expect("non utf8"))
     }
 }
 
@@ -60,5 +66,11 @@ mod tests {
         let expected = ChunkType::try_from([82, 117, 83, 116]).unwrap();
         let actual = ChunkType::from_str("RuSt").unwrap();
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn test_chunk_type_display() {
+        let actual = ChunkType::from_str("RuSt").unwrap();
+        assert_eq!("RuSt", actual.to_string());
     }
 }
