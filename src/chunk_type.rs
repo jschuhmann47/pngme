@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 #[derive(PartialEq, Eq, Debug)]
-struct ChunkType {
+pub struct ChunkType {
     bytes: [u8; 4],
 }
 
 impl ChunkType {
-    fn bytes(&self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         self.bytes
     }
 
@@ -15,26 +15,26 @@ impl ChunkType {
     }
 
     fn is_critical(&self) -> bool {
-        // moves the bit 1 four positions to the left so that it is in bit five, and we do a binary AND, keeping only that bit in 1 or 0
         self.is_zero_bit_from_byte_at(5, 0)
     }
-
+    
     fn is_public(&self) -> bool {
         self.is_zero_bit_from_byte_at(5, 1)
     }
-
+    
     fn is_reserved_bit_valid(&self) -> bool {
         self.is_zero_bit_from_byte_at(5, 2)
     }
-
+    
     fn is_safe_to_copy(&self) -> bool {
         !self.is_zero_bit_from_byte_at(5, 3) 
     }
-
+    
     fn is_zero_bit_from_byte_at(&self, position: u8, byte_number: usize) -> bool {
         if position > 8 || byte_number > 4 {
             return false;
         }
+        // moves the bit 1 `position` positions to the left so that it is in bit `byte_number` and we do a binary AND, keeping only that bit in 1 or 0
         (self.bytes()[byte_number] & (1 << position)) == 0
     }
 }
