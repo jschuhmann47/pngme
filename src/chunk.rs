@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{chunk_type::ChunkType, crc};
 
-struct Chunk {
+pub struct Chunk {
     length: u32,
     chunk_type: ChunkType,
     data: Vec<u8>,
@@ -47,11 +47,11 @@ impl TryFrom<&[u8]> for Chunk {
         let parsed_length = u32::from_be_bytes(length);
 
         let data = &value[8..8+(parsed_length as usize)];
-        let crc = core::array::from_fn(|i| value[i+8+(parsed_length as usize)]);
+        let crc: [u8; 4] = core::array::from_fn(|i| value[i+8+(parsed_length as usize)]);
         // let data = &value[5..((parsed_length) + 5)];
         // let mut crc = &value[parsed_length + 5 + 1..(parsed_length) + 5 + 4]; // TODO make it nicer
         let crc = u32::from_be_bytes(crc);
-        let calc_crc = crate::crc::crc32(&value[4..=8+(parsed_length as usize)]);
+        let calc_crc = crate::crc::crc32(&value[4..8+(parsed_length as usize)]);
         if crc != calc_crc {
             println!("crc: {}, func: {}",crc, calc_crc);
             return Err(String::from("invalid crc"));
@@ -84,7 +84,7 @@ mod tests {
             .copied()
             .collect();
 
-        Chunk::try_from(chunk_data.as_ref()).unwrap()
+        Chunk::try_from(chunk_data.as_ref()).expect("failed try_from chunk")
     }
 
     #[test]
