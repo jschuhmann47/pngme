@@ -55,6 +55,9 @@ impl FromStr for ChunkType {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 4 {
+            return Err(String::from("invalid chunk type"));
+        }
         let mut bytes: [u8; 4] = [0; 4];
         for (i, c) in s.bytes().enumerate() {
             bytes[i] = c
