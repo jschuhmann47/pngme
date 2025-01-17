@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::{chunk_type::ChunkType, crc};
 
+#[derive(PartialEq, Eq, Debug)]
 pub struct Chunk {
     length: u32,
     chunk_type: ChunkType,
@@ -24,8 +25,23 @@ impl Chunk {
         self.length
     }
 
+    fn chunk_type(&self) -> &ChunkType {
+        &self.chunk_type
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.data
+    }
+
     fn crc(&self) -> u32 {
         self.crc
+    }
+
+    fn data_as_string(&self) -> Result<String, String> {
+        match std::str::from_utf8(&self.data.as_slice()) {
+            Ok(string) => Ok(String::from(string)),
+            Err(_) => Err(String::from("could not convert data to string"))
+        }
     }
 }
 
@@ -37,29 +53,28 @@ impl TryFrom<&[u8]> for Chunk {
             return Err(String::from("invalid value"));
         }
         let length: [u8; 4] = core::array::from_fn(|i| value[i]);
-        // let mut length = &value[0..3];
         let chunk_type: [u8; 4] = core::array::from_fn(|i| value[i+4]);
         let chunk_type = match ChunkType::try_from(chunk_type) {
             Ok(chunk_type) => chunk_type,
-            Err(e) => return Err(String::from("invalid chunk type")),
+            Err(_) => return Err(String::from("invalid chunk type")),
         };
 
         let parsed_length = u32::from_be_bytes(length);
 
         let data = &value[8..8+(parsed_length as usize)];
         let crc: [u8; 4] = core::array::from_fn(|i| value[i+8+(parsed_length as usize)]);
-        // let data = &value[5..((parsed_length) + 5)];
-        // let mut crc = &value[parsed_length + 5 + 1..(parsed_length) + 5 + 4]; // TODO make it nicer
         let crc = u32::from_be_bytes(crc);
         let calc_crc = crate::crc::crc32(&value[4..8+(parsed_length as usize)]);
         if crc != calc_crc {
-            println!("crc: {}, func: {}",crc, calc_crc);
             return Err(String::from("invalid crc"));
         }
-
         Ok(Chunk { length: parsed_length, chunk_type, data: data.to_vec(), crc })
+    }
+}
 
-
+impl std::fmt::Display for Chunk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
@@ -108,5 +123,36 @@ mod tests {
     fn test_chunk_type() {
         let chunk = testing_chunk();
         assert_eq!(chunk.chunk_type.to_string(), String::from("RuSt"));
+    }
+
+    #[test]
+    fn test_chunk_string() {
+        let chunk = testing_chunk();
+        let chunk_string = chunk.data_as_string().unwrap();
+        let expected_chunk_string = String::from("This is where your secret message will be!");
+        assert_eq!(chunk_string, expected_chunk_string);
+    }
+
+    #[test]
+    pub fn test_chunk_trait_impls() {
+        let data_length: u32 = 42;
+        let chunk_type = "RuSt".as_bytes();
+        let message_bytes = "This is where your secret message will be!".as_bytes();
+        let crc: u32 = 2882656334;
+
+        let chunk_data: Vec<u8> = data_length
+            .to_be_bytes()
+            .iter()
+            .chain(chunk_type.iter())
+            .chain(message_bytes.iter())
+            .chain(crc.to_be_bytes().iter())
+            .copied()
+            .collect();
+        
+        let chunk: Chunk = TryFrom::try_from(chunk_data.as_ref()).unwrap();
+        
+        let _chunk_string = format!("{}", chunk);
+
+        assert_eq!(chunk.to_string(), _chunk_string)
     }
 }
