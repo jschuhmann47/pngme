@@ -11,7 +11,7 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let crc_data = [chunk_type.bytes().to_vec(), data.to_vec()].concat();
         Chunk {
             length: data.len() as u32,
@@ -25,7 +25,7 @@ impl Chunk {
         self.length
     }
 
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
 
@@ -37,14 +37,14 @@ impl Chunk {
         self.crc
     }
 
-    fn data_as_string(&self) -> Result<String, String> {
+    pub fn data_as_string(&self) -> Result<String, String> {
         match std::str::from_utf8(&self.data.as_slice()) {
             Ok(string) => Ok(String::from(string)),
             Err(_) => Err(String::from("could not convert data to string"))
         }
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         [u32::to_be_bytes(self.length()), self.chunk_type().bytes(), core::array::from_fn(|i| self.data[i]), u32::to_be_bytes(self.crc())].concat()
     }
 }

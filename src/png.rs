@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use crate::chunk::Chunk;
-const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
 #[derive(Debug)]
 struct Png {
@@ -9,7 +8,48 @@ struct Png {
     chunks: Vec<Chunk>,
 }
 
-impl Png {}
+impl Png {
+    pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+
+    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+        Png { header: Png::STANDARD_HEADER, chunks }
+    }
+
+    fn chunks(&self) -> &[Chunk] {
+        &self.chunks
+    }
+
+    fn append_chunk(&mut self, chunk: Chunk) {
+        self.chunks.push(chunk);
+    }
+
+    fn remove_first_chunk(&mut self, chunk_type: &str) -> Option<Chunk> {
+       for (i,c) in self.chunks.iter().enumerate() {
+          if c.chunk_type().to_string() == chunk_type {
+                return Some(self.chunks.remove(i))
+          }
+       }
+       None
+    }
+
+    fn header(&self) -> &[u8; 8] {
+        &self.header
+    }
+
+    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+        let chunks: Vec<&Chunk> = self.chunks().iter().filter(|t| t.chunk_type().to_string() == chunk_type).collect();
+        if chunks.len() > 0 {
+            return Some(chunks[0])
+        }
+        None
+    }
+    fn as_bytes(&self) -> Vec<u8> {
+        let mut header_bytes = self.header().to_vec();
+        let mut chunk_bytes: Vec<u8> = self.chunks.iter().flat_map(|c| c.as_bytes()).collect();
+        header_bytes.append(&mut chunk_bytes);
+        header_bytes
+    }
+}
 
 impl TryFrom<&[u8]> for Png {
     type Error = String;
@@ -17,6 +57,9 @@ impl TryFrom<&[u8]> for Png {
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut chunks: Vec<Chunk> = Vec::new();
         let header: [u8; 8] =  core::array::from_fn(|j| value[j]);
+        if header != Png::STANDARD_HEADER {
+            return Err(String::from("invalid header"));
+        }
         let mut i = 8;
         while i < value.len() - 1 {
             let parsed_length: [u8; 4] = core::array::from_fn(|j| value[i+j]);
@@ -50,127 +93,129 @@ mod tests {
     use std::convert::TryFrom;
     use std::str::FromStr;
 
-    // fn testing_chunks() -> Vec<Chunk> {
-    //     vec![
-    //         chunk_from_strings("FrSt", "I am the first chunk").unwrap(),
-    //         chunk_from_strings("miDl", "I am another chunk").unwrap(),
-    //         chunk_from_strings("LASt", "I am the last chunk").unwrap(),
-    //     ]
-    // }
+    fn testing_chunks() -> Vec<Chunk> {
+        vec![
+            chunk_from_strings("FrSt", "I am the first chunk").unwrap(),
+            chunk_from_strings("miDl", "I am another chunk").unwrap(),
+            chunk_from_strings("LASt", "I am the last chunk").unwrap(),
+        ]
+    }
 
-    // fn testing_png() -> Png {
-    //     let chunks = testing_chunks();
-    //     Png::from_chunks(chunks)
-    // }
+    fn testing_png() -> Png {
+        let chunks = testing_chunks();
+        Png::from_chunks(chunks)
+    }
 
-    // fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
-    //     use std::str::FromStr;
+    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, String> {
+        use std::str::FromStr;
 
-    //     let chunk_type = ChunkType::from_str(chunk_type)?;
-    //     let data: Vec<u8> = data.bytes().collect();
+        let chunk_type = ChunkType::from_str(chunk_type)?;
+        let data: Vec<u8> = data.bytes().collect();
 
-    //     Ok(Chunk::new(chunk_type, data))
-    // }
+        Ok(Chunk::new(chunk_type, data))
+    }
 
-    // #[test]
-    // fn test_from_chunks() {
-    //     let chunks = testing_chunks();
-    //     let png = Png::from_chunks(chunks);
+    #[test]
+    fn test_from_chunks() {
+        let chunks = testing_chunks();
+        let png = Png::from_chunks(chunks);
 
-    //     assert_eq!(png.chunks().len(), 3);
-    // }
+        assert_eq!(png.chunks().len(), 3);
+    }
 
-    // #[test]
-    // fn test_valid_from_bytes() {
-    //     let chunk_bytes: Vec<u8> = testing_chunks()
-    //         .into_iter()
-    //         .flat_map(|chunk| chunk.as_bytes())
-    //         .collect();
+    #[test]
+    fn test_valid_from_bytes() {
+        let chunk_bytes: Vec<u8> = testing_chunks()
+            .into_iter()
+            .flat_map(|chunk| chunk.as_bytes())
+            .collect();
 
-    //     let bytes: Vec<u8> = Png::STANDARD_HEADER
-    //         .iter()
-    //         .chain(chunk_bytes.iter())
-    //         .copied()
-    //         .collect();
+        let bytes: Vec<u8> = Png::STANDARD_HEADER
+            .iter()
+            .chain(chunk_bytes.iter())
+            .copied()
+            .collect();
 
-    //     let png = Png::try_from(bytes.as_ref());
+        let png = Png::try_from(bytes.as_ref());
 
-    //     assert!(png.is_ok());
-    // }
+        assert!(png.is_ok());
+    }
 
-    // #[test]
-    // fn test_invalid_header() {
-    //     let chunk_bytes: Vec<u8> = testing_chunks()
-    //         .into_iter()
-    //         .flat_map(|chunk| chunk.as_bytes())
-    //         .collect();
+    #[test]
+    fn test_invalid_header() {
+        let chunk_bytes: Vec<u8> = testing_chunks()
+            .into_iter()
+            .flat_map(|chunk| chunk.as_bytes())
+            .collect();
 
-    //     let bytes: Vec<u8> = [13, 80, 78, 71, 13, 10, 26, 10]
-    //         .iter()
-    //         .chain(chunk_bytes.iter())
-    //         .copied()
-    //         .collect();
+        let bytes: Vec<u8> = [13, 80, 78, 71, 13, 10, 26, 10]
+            .iter()
+            .chain(chunk_bytes.iter())
+            .copied()
+            .collect();
 
-    //     let png = Png::try_from(bytes.as_ref());
+        let png = Png::try_from(bytes.as_ref());
 
-    //     assert!(png.is_err());
-    // }
+        assert!(png.is_err_and(|e| e.as_str() == "invalid header"));
+    }
 
-    // #[test]
-    // fn test_invalid_chunk() {
-    //     let mut chunk_bytes: Vec<u8> = testing_chunks()
-    //         .into_iter()
-    //         .flat_map(|chunk| chunk.as_bytes())
-    //         .collect();
+    #[test]
+    fn test_invalid_chunk() {
+        let mut png = Vec::from(Png::STANDARD_HEADER);
+        let mut chunk_bytes: Vec<u8> = testing_chunks()
+            .into_iter()
+            .flat_map(|chunk| chunk.as_bytes())
+            .collect();
 
-    //     #[rustfmt::skip]
-    //     let mut bad_chunk = vec![
-    //         0, 0, 0, 5,         // length
-    //         32, 117, 83, 116,   // Chunk Type (bad)
-    //         65, 64, 65, 66, 67, // Data
-    //         1, 2, 3, 4, 5       // CRC (bad)
-    //     ];
+        #[rustfmt::skip]
+        let mut bad_chunk = vec![
+            0, 0, 0, 5,         // length
+            32, 117, 83, 116,   // Chunk Type (bad)
+            65, 64, 65, 66, 67, // Data
+            1, 2, 3, 4, 5       // CRC (bad)
+        ];
 
-    //     chunk_bytes.append(&mut bad_chunk);
+        chunk_bytes.append(&mut bad_chunk);
+        png.append(&mut chunk_bytes);
 
-    //     let png = Png::try_from(chunk_bytes.as_ref());
+        let png = Png::try_from(png.as_ref());
 
-    //     assert!(png.is_err());
-    // }
+        assert!(png.is_err_and(|e| e.as_str() == "invalid chunk"));
+    }
 
-    // #[test]
-    // fn test_list_chunks() {
-    //     let png = testing_png();
-    //     let chunks = png.chunks();
-    //     assert_eq!(chunks.len(), 3);
-    // }
+    #[test]
+    fn test_list_chunks() {
+        let png = testing_png();
+        let chunks = png.chunks();
+        assert_eq!(chunks.len(), 3);
+    }
 
-    // #[test]
-    // fn test_chunk_by_type() {
-    //     let png = testing_png();
-    //     let chunk = png.chunk_by_type("FrSt").unwrap();
-    //     assert_eq!(&chunk.chunk_type().to_string(), "FrSt");
-    //     assert_eq!(&chunk.data_as_string().unwrap(), "I am the first chunk");
+    #[test]
+    fn test_chunk_by_type() {
+        let png = testing_png();
+        let chunk = png.chunk_by_type("FrSt").unwrap();
+        assert_eq!(&chunk.chunk_type().to_string(), "FrSt");
+        assert_eq!(&chunk.data_as_string().unwrap(), "I am the first chunk");
 
-    // }
+    }
 
-    // #[test]
-    // fn test_append_chunk() {
-    //     let mut png = testing_png();
-    //     png.append_chunk(chunk_from_strings("TeSt", "Message").unwrap());
-    //     let chunk = png.chunk_by_type("TeSt").unwrap();
-    //     assert_eq!(&chunk.chunk_type().to_string(), "TeSt");
-    //     assert_eq!(&chunk.data_as_string().unwrap(), "Message");
-    // }
+    #[test]
+    fn test_append_chunk() {
+        let mut png = testing_png();
+        png.append_chunk(chunk_from_strings("TeSt", "Message").unwrap());
+        let chunk = png.chunk_by_type("TeSt").unwrap();
+        assert_eq!(&chunk.chunk_type().to_string(), "TeSt");
+        assert_eq!(&chunk.data_as_string().unwrap(), "Message");
+    }
 
-    // #[test]
-    // fn test_remove_first_chunk() {
-    //     let mut png = testing_png();
-    //     png.append_chunk(chunk_from_strings("TeSt", "Message").unwrap());
-    //     png.remove_first_chunk("TeSt").unwrap();
-    //     let chunk = png.chunk_by_type("TeSt");
-    //     assert!(chunk.is_none());
-    // }
+    #[test]
+    fn test_remove_first_chunk() {
+        let mut png = testing_png();
+        png.append_chunk(chunk_from_strings("TeSt", "Message").unwrap());
+        png.remove_first_chunk("TeSt").unwrap();
+        let chunk = png.chunk_by_type("TeSt");
+        assert!(chunk.is_none());
+    }
 
     #[test]
     fn test_png_from_image_file() {
@@ -178,31 +223,33 @@ mod tests {
         assert!(png.is_ok());
     }
 
-    // #[test]
-    // fn test_as_bytes() {
-    //     let png = Png::try_from(&PNG_FILE[..]).unwrap();
-    //     let actual = png.as_bytes();
-    //     let expected: Vec<u8> = PNG_FILE.to_vec();
-    //     assert_eq!(actual, expected);
-    // }
+    #[test]
+    fn test_as_bytes() {
+        let png = Png::try_from(&PNG_FILE[..]).unwrap();
+        let actual = png.as_bytes();
+        let expected: Vec<u8> = PNG_FILE.to_vec();
+        assert_eq!(actual, expected);
+    }
 
-    // #[test]
-    // fn test_png_trait_impls() {
-    //     let chunk_bytes: Vec<u8> = testing_chunks()
-    //         .into_iter()
-    //         .flat_map(|chunk| chunk.as_bytes())
-    //         .collect();
+    #[test]
+    fn test_png_trait_impls() {
+        let chunk_bytes: Vec<u8> = testing_chunks()
+            .into_iter()
+            .flat_map(|chunk| chunk.as_bytes())
+            .collect();
 
-    //     let bytes: Vec<u8> = Png::STANDARD_HEADER
-    //         .iter()
-    //         .chain(chunk_bytes.iter())
-    //         .copied()
-    //         .collect();
+        let bytes: Vec<u8> = Png::STANDARD_HEADER
+            .iter()
+            .chain(chunk_bytes.iter())
+            .copied()
+            .collect();
 
-    //     let png: Png = TryFrom::try_from(bytes.as_ref()).unwrap();
+        let png: Png = TryFrom::try_from(bytes.as_ref()).unwrap();
 
-    //     let _png_string = format!("{}", png);
-    // }
+        let _png_string = format!("{}", png);
+
+        assert_eq!(png.to_string(), _png_string);
+    }
 
     // This is the raw bytes for a shrunken version of the `dice.png` image on Wikipedia
     const PNG_FILE: [u8; 4803] = [
