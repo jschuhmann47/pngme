@@ -45,7 +45,12 @@ impl Chunk {
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
-        [u32::to_be_bytes(self.length()), self.chunk_type().bytes(), core::array::from_fn(|i| self.data[i]), u32::to_be_bytes(self.crc())].concat()
+        [
+            u32::to_be_bytes(self.length()).to_vec(),
+            self.chunk_type().bytes().to_vec(), 
+            self.data.to_vec(), 
+            u32::to_be_bytes(self.crc()).to_vec()
+        ].concat()
     }
 }
 
