@@ -19,7 +19,7 @@ impl Png {
         &self.chunks
     }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
 
@@ -43,7 +43,7 @@ impl Png {
         }
         None
     }
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let mut header_bytes = self.header().to_vec();
         let mut chunk_bytes: Vec<u8> = self.chunks.iter().flat_map(|c| c.as_bytes()).collect();
         header_bytes.append(&mut chunk_bytes);

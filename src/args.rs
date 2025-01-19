@@ -1,6 +1,6 @@
-use clap::{arg, Command};
+use clap::{arg, ArgMatches, Command};
 
-use crate::commands::print;
+use crate::commands::{encode, print};
 
 fn cli() -> Command {
     Command::new("pngme")
@@ -43,7 +43,11 @@ pub fn parse() {
     let matches = cli().get_matches();
     match matches.subcommand() {
         Some(("encode", sub_matches)) => {
-            println!("encoding {}", sub_matches.get_one::<String>("PATH").expect("required"))
+            let path = must_get_param(sub_matches, "PATH");
+            let chunk_type = must_get_param(sub_matches, "TYPE");
+            let message = must_get_param(sub_matches, "MESSAGE");
+            let output = sub_matches.get_one::<String>("OUTPUT");
+            encode(path, chunk_type, message, output);
         }
         Some(("decode", sub_matches)) => {
             println!("decoding {}", sub_matches.get_one::<String>("PATH").expect("required"))
@@ -52,11 +56,15 @@ pub fn parse() {
             println!("removing {}", sub_matches.get_one::<String>("PATH").expect("required"))
         }
         Some(("print", sub_matches)) => {
-            let path = sub_matches.get_one::<String>("PATH").expect("required");
+            let path = must_get_param(sub_matches, "PATH");
             print(&path);
         }
         _ => {
             println!("Invalid command. Use -h for help.")
         }
     }
+}
+
+fn must_get_param<'a>(sub_matches: &'a ArgMatches, param: &'a str) -> &'a String {
+    sub_matches.get_one::<String>(param).expect("required") 
 }
