@@ -1,6 +1,6 @@
 use clap::{arg, ArgMatches, Command};
 
-use crate::commands::{encode, print};
+use crate::commands::{decode, encode, print};
 
 fn cli() -> Command {
     Command::new("pngme")
@@ -50,7 +50,9 @@ pub fn parse() {
             encode(path, chunk_type, message, output);
         }
         Some(("decode", sub_matches)) => {
-            println!("decoding {}", sub_matches.get_one::<String>("PATH").expect("required"))
+            let path = must_get_param(sub_matches, "PATH");
+            let chunk_type = must_get_param(sub_matches, "TYPE");
+            decode(path, chunk_type);  
         }
         Some(("remove", sub_matches)) => {
             println!("removing {}", sub_matches.get_one::<String>("PATH").expect("required"))

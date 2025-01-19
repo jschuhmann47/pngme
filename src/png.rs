@@ -36,7 +36,7 @@ impl Png {
         &self.header
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         let chunks: Vec<&Chunk> = self.chunks().iter().filter(|t| t.chunk_type().to_string() == chunk_type).collect();
         if chunks.len() > 0 {
             return Some(chunks[0])
