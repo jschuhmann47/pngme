@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::chunk::Chunk;
 
 #[derive(Debug)]
-struct Png {
+pub struct Png {
     header: [u8; 8],
     chunks: Vec<Chunk>,
 }
@@ -81,7 +81,8 @@ impl TryFrom<&[u8]> for Png {
 
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        let string_chunks: Vec<String> = self.chunks.iter().map(|c| c.to_string()).collect();
+        write!(f, "Png: {{ header: {:?}, chunks: {:?} }}", self.header(), string_chunks)
     }
 }
 

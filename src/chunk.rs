@@ -40,7 +40,10 @@ impl Chunk {
     pub fn data_as_string(&self) -> Result<String, String> {
         match std::str::from_utf8(&self.data.as_slice()) {
             Ok(string) => Ok(String::from(string)),
-            Err(_) => Err(String::from("could not convert data to string"))
+            Err(e) => {
+                eprintln!("{}", e);
+                Err(String::from("could not convert data to string"))
+            }
         }
     }
 
@@ -83,7 +86,7 @@ impl TryFrom<&[u8]> for Chunk {
 
 impl std::fmt::Display for Chunk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "length: {}, type: {}, data: {:?}, crc: {}", self.length(), self.chunk_type.to_string(), self.data, self.crc())
     }
 }
 

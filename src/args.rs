@@ -1,5 +1,7 @@
 use clap::{arg, Command};
 
+use crate::commands::print;
+
 fn cli() -> Command {
     Command::new("pngme")
         .about("PNGs with messages")
@@ -50,7 +52,8 @@ pub fn parse() {
             println!("removing {}", sub_matches.get_one::<String>("PATH").expect("required"))
         }
         Some(("print", sub_matches)) => {
-            println!("printing {}", sub_matches.get_one::<String>("PATH").expect("required"))
+            let path = sub_matches.get_one::<String>("PATH").expect("required");
+            print(&path);
         }
         _ => {
             println!("Invalid command. Use -h for help.")
