@@ -86,7 +86,7 @@ impl TryFrom<&[u8]> for Chunk {
 
 impl std::fmt::Display for Chunk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "length: {}, type: {}, data: {:?}, crc: {}", self.length(), self.chunk_type.to_string(), self.data, self.crc())
+        write!(f, "length: {}, type: {}, data: {:?}, crc: {}", self.length(), self.chunk_type.to_string(), std::str::from_utf8(&self.data).unwrap_or_else(|_| "non utf-8"), self.crc())
     }
 }
 

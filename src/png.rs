@@ -23,7 +23,7 @@ impl Png {
         self.chunks.push(chunk);
     }
 
-    fn remove_first_chunk(&mut self, chunk_type: &str) -> Option<Chunk> {
+    pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Option<Chunk> {
        for (i,c) in self.chunks.iter().enumerate() {
           if c.chunk_type().to_string() == chunk_type {
                 return Some(self.chunks.remove(i))

@@ -75,7 +75,7 @@ impl std::fmt::Display for ChunkType {
         write!(
             f,
             "{}",
-            std::str::from_utf8(self.bytes().as_slice()).expect("non utf8")
+            std::str::from_utf8(self.bytes().as_slice()).unwrap_or_else(|_| "non utf-8")
         )
     }
 }
