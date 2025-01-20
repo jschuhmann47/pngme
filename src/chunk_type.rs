@@ -17,19 +17,19 @@ impl ChunkType {
     fn is_critical(&self) -> bool {
         self.is_zero_bit_from_byte_at(5, 0)
     }
-    
+
     fn is_public(&self) -> bool {
         self.is_zero_bit_from_byte_at(5, 1)
     }
-    
+
     fn is_reserved_bit_valid(&self) -> bool {
         self.is_zero_bit_from_byte_at(5, 2)
     }
-    
+
     fn is_safe_to_copy(&self) -> bool {
-        !self.is_zero_bit_from_byte_at(5, 3) 
+        !self.is_zero_bit_from_byte_at(5, 3)
     }
-    
+
     fn is_zero_bit_from_byte_at(&self, position: u8, byte_number: usize) -> bool {
         if position > 8 || byte_number > 4 {
             return false;
@@ -178,5 +178,4 @@ mod tests {
         assert_eq!("RuSt", chunk_type_1.to_string());
         assert_eq!("RuSt", chunk_type_2.to_string());
     }
-
 }

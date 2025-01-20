@@ -10,26 +10,26 @@ fn cli() -> Command {
         .allow_external_subcommands(true)
         .subcommand(
             Command::new("encode")
-            .about("Encodes a message in a PNG file")
-            .arg(arg!(<PATH> "Path to a PNG file"))
-            .arg(arg!(<TYPE> "Chunk type"))
-            .arg(arg!(<MESSAGE> "Message that will be set"))
-            .arg(arg!(<OUTPUT> "Output PNG file").required(false))
-            .arg_required_else_help(true)
+                .about("Encodes a message in a PNG file")
+                .arg(arg!(<PATH> "Path to a PNG file"))
+                .arg(arg!(<TYPE> "Chunk type"))
+                .arg(arg!(<MESSAGE> "Message that will be set"))
+                .arg(arg!(<OUTPUT> "Output PNG file").required(false))
+                .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("decode")
-            .about("Decodes a message in a PNG file")
-            .arg(arg!(<PATH> "Path to a PNG file"))
-            .arg(arg!(<TYPE> "Chunk type"))
-            .arg_required_else_help(true)
+                .about("Decodes a message in a PNG file")
+                .arg(arg!(<PATH> "Path to a PNG file"))
+                .arg(arg!(<TYPE> "Chunk type"))
+                .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("remove")
-            .about("Removes a chunk type from a PNG file")
-            .arg(arg!(<PATH> "Path to a PNG file"))
-            .arg(arg!(<TYPE> "Chunk type"))
-            .arg_required_else_help(true)
+                .about("Removes a chunk type from a PNG file")
+                .arg(arg!(<PATH> "Path to a PNG file"))
+                .arg(arg!(<TYPE> "Chunk type"))
+                .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("print")
@@ -52,7 +52,7 @@ pub fn parse() {
         Some(("decode", sub_matches)) => {
             let path = must_get_param(sub_matches, "PATH");
             let chunk_type = must_get_param(sub_matches, "TYPE");
-            decode(path, chunk_type);  
+            decode(path, chunk_type);
         }
         Some(("remove", sub_matches)) => {
             let path = must_get_param(sub_matches, "PATH");
@@ -70,5 +70,5 @@ pub fn parse() {
 }
 
 fn must_get_param<'a>(sub_matches: &'a ArgMatches, param: &'a str) -> &'a String {
-    sub_matches.get_one::<String>(param).expect("required") 
+    sub_matches.get_one::<String>(param).expect("required")
 }

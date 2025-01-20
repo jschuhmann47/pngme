@@ -12,7 +12,10 @@ impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
     fn from_chunks(chunks: Vec<Chunk>) -> Png {
-        Png { header: Png::STANDARD_HEADER, chunks }
+        Png {
+            header: Png::STANDARD_HEADER,
+            chunks,
+        }
     }
 
     fn chunks(&self) -> &[Chunk] {
@@ -24,12 +27,12 @@ impl Png {
     }
 
     pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Option<Chunk> {
-       for (i,c) in self.chunks.iter().enumerate() {
-          if c.chunk_type().to_string() == chunk_type {
-                return Some(self.chunks.remove(i))
-          }
-       }
-       None
+        for (i, c) in self.chunks.iter().enumerate() {
+            if c.chunk_type().to_string() == chunk_type {
+                return Some(self.chunks.remove(i));
+            }
+        }
+        None
     }
 
     fn header(&self) -> &[u8; 8] {
@@ -37,9 +40,13 @@ impl Png {
     }
 
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        let chunks: Vec<&Chunk> = self.chunks().iter().filter(|t| t.chunk_type().to_string() == chunk_type).collect();
+        let chunks: Vec<&Chunk> = self
+            .chunks()
+            .iter()
+            .filter(|t| t.chunk_type().to_string() == chunk_type)
+            .collect();
         if chunks.len() > 0 {
-            return Some(chunks[0])
+            return Some(chunks[0]);
         }
         None
     }
@@ -56,13 +63,13 @@ impl TryFrom<&[u8]> for Png {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut chunks: Vec<Chunk> = Vec::new();
-        let header: [u8; 8] =  core::array::from_fn(|j| value[j]);
+        let header: [u8; 8] = core::array::from_fn(|j| value[j]);
         if header != Png::STANDARD_HEADER {
             return Err(String::from("invalid header"));
         }
         let mut i = 8;
         while i < value.len() - 1 {
-            let parsed_length: [u8; 4] = core::array::from_fn(|j| value[i+j]);
+            let parsed_length: [u8; 4] = core::array::from_fn(|j| value[i + j]);
             let parsed_length = u32::from_be_bytes(parsed_length);
             let length_of_chunk = 12 + parsed_length;
             let chunk = match Chunk::try_from(&value[i..length_of_chunk as usize + i]) {
@@ -72,17 +79,19 @@ impl TryFrom<&[u8]> for Png {
             chunks.push(chunk);
             i += length_of_chunk as usize;
         }
-        Ok(Png {
-            chunks,
-            header,
-        })
+        Ok(Png { chunks, header })
     }
 }
 
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let string_chunks: Vec<String> = self.chunks.iter().map(|c| c.to_string()).collect();
-        write!(f, "Png: {{ header: {:?}, chunks: {:?} }}", self.header(), string_chunks)
+        write!(
+            f,
+            "Png: {{ header: {:?}, chunks: {:?} }}",
+            self.header(),
+            string_chunks
+        )
     }
 }
 
@@ -197,7 +206,6 @@ mod tests {
         let chunk = png.chunk_by_type("FrSt").unwrap();
         assert_eq!(&chunk.chunk_type().to_string(), "FrSt");
         assert_eq!(&chunk.data_as_string().unwrap(), "I am the first chunk");
-
     }
 
     #[test]
